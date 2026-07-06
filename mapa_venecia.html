@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa del Viatge - Venècia</title>
+
+    <!-- Leaflet CSS para el mapa -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+
+    <style>
+        /* Estilos copiados de viatge.html para consistencia */
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&family=Fredoka+One&display=swap');
+        
+        :root {
+            --fondo: #f5f2e8;
+            --azul-mar: #2a4b7c;
+            --naranja: #c75b39;
+            --texto: #2c2c2c;
+        }
+
+        body { background-color: #dcdad0; font-family: 'Montserrat', sans-serif; padding: 20px; margin: 0; }
+        .menu-wrapper { 
+            max-width: 900px; margin: auto; border: 3px solid var(--azul-mar); 
+            padding: 30px; background: var(--fondo); position: relative; overflow: hidden;
+        }
+        
+        header { text-align: center; border-bottom: 3px solid var(--azul-mar); margin-bottom: 20px; padding-bottom: 20px; }
+        
+        h1 { font-family: 'Montserrat', sans-serif; font-weight: 800; color: var(--azul-mar); font-size: 5rem; margin: 0; letter-spacing: -2px; }
+        .sub { font-weight: bold; color: var(--azul-mar); margin-top: 10px; font-size: 1.2rem; text-transform: uppercase; }
+
+        .ciudad-titulo { 
+            font-family: 'Fredoka One', cursive; color: var(--azul-mar); font-size: 2rem; 
+            margin-top: 20px; border-bottom: 3px solid var(--azul-mar);
+            display: inline-block; margin-bottom: 20px;
+        }
+
+        /* Filtro azul para iconos del mapa, igual que en viatge.html */
+        .map-icon {
+            filter: invert(24%) sepia(21%) saturate(2331%) hue-rotate(186deg) brightness(93%) contrast(85%);
+        }
+
+        /* Estilos para el contenedor del mapa */
+        #map { 
+            height: 500px; 
+            width: 100%;
+            border: 2px solid var(--azul-mar);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        /* Estilos para los popups del mapa */
+        .leaflet-popup-content-wrapper {
+            background: var(--fondo);
+            color: var(--texto);
+            border-radius: 6px;
+        }
+        .leaflet-popup-content {
+            font-family: 'Montserrat', sans-serif;
+        }
+        .leaflet-popup-content strong {
+            color: var(--naranja);
+        }
+        .leaflet-popup-tip {
+            background: var(--fondo);
+        }
+        .leaflet-container a.leaflet-popup-close-button {
+            color: var(--texto);
+        }
+
+        .info-bloque {
+            background-color: #ffffff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            margin-top: 20px;
+        }
+        .info-bloque h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            color: var(--naranja);
+            margin-top: 0;
+            font-size: 1.1rem;
+        }
+        .info-bloque ul {
+            list-style-type: '→ ';
+            padding-left: 20px;
+            font-size: 0.9rem;
+            color: var(--texto);
+        }
+
+        .mar-footer { 
+            margin-top: 40px; height: 80px; background: var(--azul-mar); 
+            width: calc(100% + 60px); margin-left: -30px; margin-bottom: -30px;
+            border-top: 3px solid var(--azul-mar);
+            display: flex; justify-content: center; align-items: center; color: white; font-size: 3rem; letter-spacing: 5px;
+        }
+
+        /* --- Responsive Design --- */
+        @media (min-width: 768px) {
+            body { padding: 40px; }
+            .menu-wrapper { padding: 50px; }
+            #map { height: 600px; }
+            .mar-footer { width: calc(100% + 100px); margin-left: -50px; margin-bottom: -50px;}
+        }
+    </style>
+</head>
+<body>
+
+<div class="menu-wrapper">
+    <header>
+        <h1>ITALIA</h1>
+        <div class="sub">MAPA INTERACTIU</div>
+    </header>
+
+    <div class="ciudad-titulo">VENÈCIA (22-23 JULIOL)</div>
+
+    <!-- Contenedor del mapa -->
+    <div id="map"></div>
+
+    <div class="mar-footer">~~~~~ ≋ ≋ ≋ ≋ ≋ ≋ ≋ ≋ ~~~~~</div>
+</div>
+
+<!-- Leaflet JS para el mapa -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+
+<script>
+    // 1. Inicializar el mapa centrado entre Venecia y Mestre
+    const map = L.map('map').setView([45.46, 12.3], 12);
+    
+    // 2. Añadir una capa de mapa base monocromática (CartoDB Positron)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    }).addTo(map);
+
+    // 3. Definir iconos personalizados
+    const iconAlojamiento = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/25/25694.png',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -16],
+        className: 'map-icon'
+    });
+
+    const iconTransporte = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/128/635/635705.png', // Icono de bus/transporte público
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -16],
+        className: 'map-icon'
+    });
+
+    const iconVer = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/128/785/785432.png', // Icono de museo/monumento
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -16],
+        className: 'map-icon'
+    });
+
+    const iconGastronomia = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/128/685/685352.png', // Icono de tenedor y cuchillo
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -16],
+        className: 'map-icon'
+    });
+
+    const icons = {
+        'alojamiento': iconAlojamiento,
+        'transporte': iconTransporte,
+        'ver': iconVer,
+        'gastronomia': iconGastronomia
+    };
+
+    // 4. Puntos de interés con sus coordenadas y tipo
+    const places = [
+        // --- DIA 22: MESTRE ---
+        {
+            coords: [45.48432778359766, 12.231327228601918],
+            title: "Allotjament: Ca' Rebeka Venice",
+            description: "La nostre casa a Mestre i Venècia.",
+            type: 'alojamiento'
+        },
+        {
+            coords: [45.504738545693485, 12.339322050842942],
+            title: "Aeroport Marco Polo (VCE)",
+            description: "Punt d'arribada a Venècia.",
+            type: 'transporte'
+        },
+        {
+            coords: [45.48260339751695, 12.231775599502038],
+            title: "Estació de Venice Mestre",
+            description: "Estació de tren per anar a Venècia illa.",
+            type: 'transporte'
+        },
+        {
+            coords: [45.49416346514325, 12.241714240380059],
+            title: "Piazza Erminio Ferretto",
+            description: "El cor del centre de Mestre.",
+            type: 'ver'
+        },
+        {
+            coords: [45.49313701751743, 12.239747155304947],
+            title: "Galleria Matteotti",
+            description: "Galeria comercial al centre de Mestre.",
+            type: 'ver'
+        },
+        {
+            coords: [45.43472921424917, 12.338971242841913], // Piazzetta Edmondo Matter
+            title: "Torre dell'Orologio",
+            description: "Torre del rellotge a Mestre.",
+            type: 'ver'
+        },
+        {
+            coords: [45.47592851494407, 12.261049785861976],
+            title: "Forte Marghera",
+            description: "Fortalesa històrica amb espais culturals.",
+            type: 'ver'
+        },
+        {
+            coords: [45.474311995152405, 12.276048327721403], // Via Orlanda
+            title: "Parco San Giuliano",
+            description: "Gran parc amb vistes a Venècia.",
+            type: 'ver'
+        },
+        { coords: [45.485043693501055, 12.240351205052866], title: "Hostaria Vite Rossa", description: "Via Pietro Bembo, 30, Mestre", type: 'gastronomia' },
+        { coords: [45.47767818654394, 12.22320357345156], title: "Osteria al Diplomatico", description: "Via Della Sortita, 17, Marghera", type: 'gastronomia' },
+        { coords: [45.49680050166105, 12.246278369996402], title: "Ostaria da Mariano", description: "Via Cesare Cecchini, 1, Mestre", type: 'gastronomia' },
+        { coords: [45.49233076700851, 12.239331681217438], title: "dal Pansa", description: "Via Rosa, 18, Mestre", type: 'gastronomia' },
+        { coords: [45.49399416103265, 12.239576403066392], title: "Da Pino Mestre", description: "P.le Luigi Candiani, 17/19, Mestre", type: 'gastronomia' },
+        { coords: [45.48522449337663, 12.256584213957849], title: "Ristorante Trattoria alla laguna", description: "V.le S. Marco, 134/D, Mestre", type: 'gastronomia' },
+
+        
+        // --- DIA 23: VENÈCIA ---
+        {
+            coords: [45.441016468264046, 12.3211732519676],
+            title: "Estació de Venice Santa Lucia",
+            description: "Estació de tren per tornar a Mestre.",
+            type: 'transporte'
+        },
+        {
+            coords: [45.43413662697738, 12.338482427034009], // P.za San Marco
+            title: "Piazza San Marco",
+            description: "La plaça més famosa de Venècia.",
+            type: 'ver'
+        },
+        {
+            coords: [45.434551927443295, 12.339710060387445],
+            title: "Basílica di San Marco",
+            description: "Catedral icònica de la ciutat.",
+            type: 'ver'
+        },
+        {
+            coords: [45.43369427759278, 12.340392087324622], // P.za San Marco, 1
+            title: "Palazzo Ducale",
+            description: "Palau del Doge, símbol del poder de Venècia.",
+            type: 'ver'
+        },
+        {
+            coords: [45.434048888706315, 12.340856498490188], // Conectant Palazzo Ducale
+            title: "Ponte dei Sospiri",
+            description: "El famós Pont dels Sospirs.",
+            type: 'ver'
+        },
+        {
+            coords: [45.43797995616189, 12.335895208037936],
+            title: "Ponte di Rialto",
+            description: "L'icònic pont sobre el Gran Canal.",
+            type: 'ver'
+        },
+        {
+            coords: [45.438110762901786, 12.342203981186481], // Calle Lunga Santa Maria Formosa, 5176b
+            title: "Libreria Acqua Alta",
+            description: "Una de les llibreries més originals del món.",
+            type: 'ver'
+        },
+        {
+            coords: [45.431664579459564, 12.328912224241437], // Pont
+            title: "Ponte dell'Accademia",
+            description: "Vistes espectaculars del Gran Canal.",
+            type: 'ver'
+        },
+        {
+            coords: [45.43067678153836, 12.334765204737145], // Dorsoduro, 1
+            title: "Basilica di Santa Maria della Salute",
+            description: "Església barroca a l'entrada del Gran Canal.",
+            type: 'ver'
+        },
+        {
+            coords: [45.43363043062825, 12.333759856199674], // Campo S. Fantin, 1965
+            title: "Teatro La Fenice",
+            description: "Un dels teatres d'òpera més famosos del món.",
+            type: 'ver'
+        },
+        {
+            coords: [45.44537603216669, 12.326869245358434], // Centre del Sestiere
+            title: "Sestiere di Cannaregio",
+            description: "Barri residencial amb el Ghetto Jueu.",
+            type: 'ver'
+        },
+        {
+            coords: [45.43356262129016, 12.322326002019068], // Centre del Sestiere
+            title: "Sestiere di Dorsoduro",
+            description: "Barri universitari i artístic.",
+            type: 'ver'
+        },
+        {
+            coords: [45.43447997418968, 12.323807503722431], // Camp
+            title: "Campo Santa Margherita",
+            description: "Plaça animada amb mercat i bars.",
+            type: 'ver'
+        },
+        { 
+            coords: [45.43476289922114, 12.349907829102422], // Campo de la Tana, 2169
+            title: "Arsenale di Venezia", 
+            description: "Antigues drassanes i base naval.", 
+            type: 'ver' 
+        },
+        { coords: [45.439508660758165, 12.327794252767564], title: "Osteria Da Filo", description: "C. del Tentor, 1539, Venècia", type: 'gastronomia' },
+        { coords: [45.43091838405616, 12.326700469996798], title: "Cantine del Vino già Schiavi", description: "Bacaro famós per cicchetti.", type: 'gastronomia' },
+        { coords: [45.43007162528758, 12.3261223693168], title: "Osteria Al Squero", description: "Lloc recomanat per a 'cicchetti'.", type: 'gastronomia' },
+        { coords: [45.43496128625865, 12.342632697254519], title: "Bacaro Risorto", description: "Campo S. Provolo, 4700, Venècia", type: 'gastronomia' },
+        { coords: [45.43778176321829, 12.323481606101392], title: "Bacaro acqua alta", description: "Al costat de la llibreria.", type: 'gastronomia' },
+        { coords: [45.43970925443141, 12.33809465076269], title: "Bacaro Al Momoleto De Le Voie", description: "Salizada S. Canzian, 5940, Venècia", type: 'gastronomia' },
+        { coords: [45.438154248795925, 12.331947492062016], title: "Al Ponte Storto Osteria", description: "Calle Bianca Cappello, 1278, Venècia", type: 'gastronomia' },
+        { coords: [45.44405342951719, 12.333078373368549], title: "Vino Vero", description: "Bacaro al barri de Cannaregio.", type: 'gastronomia' },
+
+    ];
+
+    // Array para guardar las referencias a los marcadores
+    const markers = [];
+
+    // 5. Añadir marcadores al mapa
+    places.forEach(place => {
+        // Guardamos la información del tipo en el marcador para usarla después
+        const marker = L.marker(place.coords, { 
+            icon: icons[place.type],
+            placeType: place.type // Propiedad personalizada
+        }).addTo(map);
+
+        marker.bindPopup(`<strong>${place.title}</strong><br>${place.description}`);
+        markers.push(marker);
+    });
+
+    // 6. Función para actualizar el tamaño de los iconos según el zoom
+    function updateIconSizes() {
+        const zoomLevel = map.getZoom();
+        let newSize;
+
+        if (zoomLevel <= 12) {
+            newSize = 18; // Más pequeño cuando está muy alejado
+        } else if (zoomLevel <= 14) {
+            newSize = 26; // Tamaño intermedio
+        } else {
+            newSize = 32; // Tamaño normal cuando está cerca
+        }
+
+        markers.forEach(marker => {
+            const placeType = marker.options.placeType;
+            const originalIcon = icons[placeType];
+
+            const newIcon = L.icon({
+                iconUrl: originalIcon.options.iconUrl,
+                iconSize: [newSize, newSize],
+                iconAnchor: [newSize / 2, newSize / 2],
+                popupAnchor: [0, -newSize / 2],
+                className: 'map-icon'
+            });
+
+            marker.setIcon(newIcon);
+        });
+    }
+
+    // 7. Escuchar el evento de zoom y llamar a la función
+    map.on('zoomend', updateIconSizes);
+
+    // Llamada inicial para establecer el tamaño correcto al cargar
+    updateIconSizes();
+</script>
+
+</body>
+</html>
